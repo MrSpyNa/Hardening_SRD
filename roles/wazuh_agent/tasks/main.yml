@@ -1,0 +1,75 @@
+---
+- name: Instalar dependencias para repositorio Wazuh
+  apt:
+    name:
+      - curl
+      - gnupg
+      - ca-certificates
+      - apt-transport-https
+    state: present
+    update_cache: yes
+
+- name: Eliminar keyring Wazuh previo si existe
+  file:
+    path: /usr/share/keyrings/wazuh.gpg
+    state: absent
+
+- name: Eliminar repositorio Wazuh previo si existe
+  file:
+    path: /etc/apt/sources.list.d/wazuh.list
+    state: absent
+
+- name: Descargar clave GPG de Wazuh
+  get_url:
+    url: https://packages.wazuh.com/key/GPG-KEY-WAZUH
+    dest: /tmp/GPG-KEY-WAZUH
+    mode: "0644"
+
+- name: Importar clave GPG de Wazuh
+  shell: |
+    gpg --no-default-keyring \
+      --keyring gnupg-ring:/usr/share/keyrings/wazuh.gpg \
+      --import /tmp/GPG-KEY-WAZUH
+    chmod 644 /usr/share/keyrings/wazuh.gpg
+    chown root:root /usr/share/keyrings/wazuh.gpg
+  args:
+    creates: /usr/share/keyrings/wazuh.gpg
+
+- name: Asegurar permisos del keyring Wazuh
+  file:
+    path: /usr/share/keyrings/wazuh.gpg
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Agregar repositorio Wazuh
+  copy:
+    dest: /etc/apt/sources.list.d/wazuh.list
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main
+
+- name: Actualizar cache apt tras agregar repositorio Wazuh
+  apt:
+    update_cache: yes
+
+- name: Instalar wazuh-agent
+  apt:
+    name: wazuh-agent
+    state: present
+  environment:
+    WAZUH_MANAGER: "{{ wazuh_manager_ip }}"
+
+- name: Configurar IP del Wazuh Manager
+  replace:
+    path: /var/ossec/etc/ossec.conf
+    regexp: '<address>.*</address>'
+    replace: '<address>{{ wazuh_manager_ip }}</address>'
+
+- name: Habilitar y arrancar wazuh-agent
+  systemd:
+    name: wazuh-agent
+    enabled: yes
+    state: started

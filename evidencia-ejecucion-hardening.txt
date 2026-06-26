@@ -1,0 +1,997 @@
+
+PLAY [Hardening CIS Level 1 — Debian 13 — ese.uy] ******************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [debian-ese]
+
+TASK [Verificar que el sistema es Debian] **************************************
+ok: [debian-ese] => changed=false 
+  msg: All assertions passed
+
+TASK [Actualizar cache de apt] *************************************************
+changed: [debian-ese]
+
+TASK [filesystem : Deshabilitar filesystems y protocolos innecesarios (CIS 1.1.1 / NETW-3200)] ***
+--- before
++++ after: /etc/modprobe.d/cis-disable.conf
+@@ -0,0 +1,21 @@
++# Filesystems innecesarios — CIS 1.1.1
++install cramfs /bin/true
++install freevxfs /bin/true
++install jffs2 /bin/true
++install hfs /bin/true
++install hfsplus /bin/true
++install squashfs /bin/true
++install udf /bin/true
++
++# Protocolos de red innecesarios — CIS 3.4 / NETW-3200
++install dccp /bin/true
++install sctp /bin/true
++install rds /bin/true
++install tipc /bin/true
++
++# Storage externo — USB-1000 / STRG-1846
++install usb-storage /bin/true
++install firewire-ohci /bin/true
++
++# IPv6 a nivel de módulo
++install ipv6 /bin/true
+
+changed: [debian-ese]
+
+TASK [filesystem : Configurar /tmp con opciones seguras (CIS 1.1.2)] ***********
+--- before: /etc/fstab (content)
++++ after: /etc/fstab (content)
+@@ -13,3 +13,4 @@
+ # swap was on /dev/sda5 during installation
+ UUID=a6046693-e9d0-4d39-ab68-6b37dc1b31ae none            swap    sw              0       0
+ /dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
++tmpfs   /tmp   tmpfs   defaults,noexec,nosuid,nodev   0 0
+
+changed: [debian-ese]
+
+TASK [filesystem : Configurar /var/tmp con opciones seguras (CIS 1.1.3)] *******
+--- before: /etc/fstab (content)
++++ after: /etc/fstab (content)
+@@ -14,3 +14,4 @@
+ UUID=a6046693-e9d0-4d39-ab68-6b37dc1b31ae none            swap    sw              0       0
+ /dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+ tmpfs   /tmp   tmpfs   defaults,noexec,nosuid,nodev   0 0
++tmpfs   /var/tmp   tmpfs   defaults,noexec,nosuid,nodev   0 0
+
+changed: [debian-ese]
+
+TASK [filesystem : Configurar /dev/shm con opciones seguras (CIS 1.1.4)] *******
+--- before: /etc/fstab (content)
++++ after: /etc/fstab (content)
+@@ -15,3 +15,4 @@
+ /dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+ tmpfs   /tmp   tmpfs   defaults,noexec,nosuid,nodev   0 0
+ tmpfs   /var/tmp   tmpfs   defaults,noexec,nosuid,nodev   0 0
++tmpfs   /dev/shm   tmpfs   defaults,noexec,nosuid,nodev   0 0
+
+changed: [debian-ese]
+
+TASK [filesystem : Remontar /tmp] **********************************************
+ok: [debian-ese]
+
+TASK [filesystem : Remontar /dev/shm] ******************************************
+ok: [debian-ese]
+
+TASK [services : Deshabilitar y detener servicios innecesarios (CIS 2.x)] ******
+ok: [debian-ese] => (item=avahi-daemon)
+ok: [debian-ese] => (item=cups)
+ok: [debian-ese] => (item=isc-dhcp-server)
+ok: [debian-ese] => (item=isc-dhcp-server6)
+ok: [debian-ese] => (item=slapd)
+ok: [debian-ese] => (item=nfs-server)
+ok: [debian-ese] => (item=rpcbind)
+ok: [debian-ese] => (item=rsync)
+ok: [debian-ese] => (item=vsftpd)
+ok: [debian-ese] => (item=xinetd)
+ok: [debian-ese] => (item=telnet)
+ok: [debian-ese] => (item=talk)
+
+TASK [kernel_parameters : Aplicar parámetros de kernel CIS] ********************
+changed: [debian-ese] => (item={'key': 'net.ipv4.ip_forward', 'value': '0'})
+changed: [debian-ese] => (item={'key': 'net.ipv6.conf.all.forwarding', 'value': '0'})
+changed: [debian-ese] => (item={'key': 'net.ipv4.conf.all.rp_filter', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'net.ipv4.conf.default.rp_filter', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'net.ipv4.conf.all.accept_redirects', 'value': '0'})
+changed: [debian-ese] => (item={'key': 'net.ipv4.conf.default.accept_redirects', 'value': '0'})
+changed: [debian-ese] => (item={'key': 'net.ipv6.conf.all.accept_redirects', 'value': '0'})
+changed: [debian-ese] => (item={'key': 'net.ipv6.conf.default.accept_redirects', 'value': '0'})
+changed: [debian-ese] => (item={'key': 'net.ipv4.conf.all.send_redirects', 'value': '0'})
+changed: [debian-ese] => (item={'key': 'net.ipv4.conf.default.send_redirects', 'value': '0'})
+changed: [debian-ese] => (item={'key': 'net.ipv4.conf.all.log_martians', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'net.ipv4.conf.default.log_martians', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'net.ipv4.icmp_echo_ignore_broadcasts', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'net.ipv4.icmp_ignore_bogus_error_responses', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'net.ipv4.tcp_syncookies', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'net.ipv6.conf.all.disable_ipv6', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'net.ipv6.conf.default.disable_ipv6', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'kernel.randomize_va_space', 'value': '2'})
+changed: [debian-ese] => (item={'key': 'kernel.dmesg_restrict', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'kernel.yama.ptrace_scope', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'kernel.kptr_restrict', 'value': '2'})
+changed: [debian-ese] => (item={'key': 'kernel.sysrq', 'value': '0'})
+changed: [debian-ese] => (item={'key': 'kernel.core_uses_pid', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'kernel.ctrl-alt-del', 'value': '0'})
+changed: [debian-ese] => (item={'key': 'kernel.perf_event_paranoid', 'value': '3'})
+changed: [debian-ese] => (item={'key': 'kernel.unprivileged_bpf_disabled', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'net.core.bpf_jit_harden', 'value': '2'})
+changed: [debian-ese] => (item={'key': 'fs.protected_fifos', 'value': '2'})
+changed: [debian-ese] => (item={'key': 'fs.protected_hardlinks', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'fs.protected_regular', 'value': '2'})
+changed: [debian-ese] => (item={'key': 'fs.protected_symlinks', 'value': '1'})
+changed: [debian-ese] => (item={'key': 'fs.suid_dumpable', 'value': '0'})
+changed: [debian-ese] => (item={'key': 'dev.tty.ldisc_autoload', 'value': '0'})
+
+TASK [kernel_parameters : Deshabilitar core dumps en limits.conf (CIS 1.5.1)] ***
+--- before: /etc/security/limits.conf (content)
++++ after: /etc/security/limits.conf (content)
+@@ -65,3 +65,7 @@
+ #@student        -       maxlogins       4
+ 
+ # End of file
++# BEGIN ANSIBLE MANAGED — core dumps
++* hard core 0
++* soft core 0
++# END ANSIBLE MANAGED — core dumps
+
+changed: [debian-ese]
+
+TASK [ufw_firewall : Instalar UFW] *********************************************
+ok: [debian-ese]
+
+TASK [ufw_firewall : Resetear reglas UFW] **************************************
+changed: [debian-ese]
+
+TASK [ufw_firewall : Política por defecto — denegar entrante] ******************
+ok: [debian-ese]
+
+TASK [ufw_firewall : Política por defecto — permitir saliente] *****************
+ok: [debian-ese]
+
+TASK [ufw_firewall : Política por defecto — denegar forward] *******************
+ok: [debian-ese]
+
+TASK [ufw_firewall : Permitir SSH (acceso desde Windows/MobaXterm)] ************
+changed: [debian-ese]
+
+TASK [ufw_firewall : Permitir Wazuh — eventos] *********************************
+changed: [debian-ese]
+
+TASK [ufw_firewall : Permitir Wazuh — enrollment] ******************************
+changed: [debian-ese]
+
+TASK [ufw_firewall : Habilitar logging UFW] ************************************
+changed: [debian-ese]
+
+TASK [ufw_firewall : Habilitar UFW] ********************************************
+changed: [debian-ese]
+
+TASK [ufw_firewall : Habilitar UFW al inicio] **********************************
+ok: [debian-ese]
+
+TASK [ssh_hardening : Asegurar que OpenSSH está instalado] *********************
+ok: [debian-ese]
+
+TASK [ssh_hardening : Aplicar configuración SSH segura] ************************
+--- before: /etc/ssh/sshd_config
++++ after: /home/joaquin/.ansible/tmp/ansible-local-280583mkx87ly/tmplrq6shz5/sshd_config.j2
+@@ -1,124 +1,50 @@
++# /etc/ssh/sshd_config
++# Hardening CIS Level 1 — ese.uy
++# Gestionado por Ansible — NO editar manualmente
+ 
+-# This is the sshd server system-wide configuration file.  See
+-# sshd_config(5) for more information.
++Port 2222
++Protocol 2
+ 
+-# This sshd was compiled with PATH=/usr/local/bin:/usr/bin:/bin:/usr/games
++# Algoritmos seguros
++KexAlgorithms curve25519-sha256,ecdh-sha2-nistp521
++Ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr
++MACs hmac-sha2-512,hmac-sha2-256
+ 
+-# The strategy used for options in the default sshd_config shipped with
+-# OpenSSH is to specify options with their default value where
+-# possible, but leave them commented.  Uncommented options override the
+-# default value.
+-
+-Include /etc/ssh/sshd_config.d/*.conf
+-
+-#Port 22
+-#AddressFamily any
+-#ListenAddress 0.0.0.0
+-#ListenAddress ::
+-
+-#HostKey /etc/ssh/ssh_host_rsa_key
+-#HostKey /etc/ssh/ssh_host_ecdsa_key
+-#HostKey /etc/ssh/ssh_host_ed25519_key
+-
+-# Ciphers and keying
+-#RekeyLimit default none
+-
+-# Logging
+-#SyslogFacility AUTH
+-#LogLevel INFO
+-
+-# Authentication:
+-
+-#LoginGraceTime 2m
+-#PermitRootLogin prohibit-password
+-#StrictModes yes
+-#MaxAuthTries 6
+-#MaxSessions 10
+-
+-#PubkeyAuthentication yes
+-
+-# Expect .ssh/authorized_keys2 to be disregarded by default in future.
+-#AuthorizedKeysFile	.ssh/authorized_keys .ssh/authorized_keys2
+-
+-#AuthorizedPrincipalsFile none
+-
+-#AuthorizedKeysCommand none
+-#AuthorizedKeysCommandUser nobody
+-
+-# For this to work you will also need host keys in /etc/ssh/ssh_known_hosts
+-#HostbasedAuthentication no
+-# Change to yes if you don't trust ~/.ssh/known_hosts for
+-# HostbasedAuthentication
+-#IgnoreUserKnownHosts no
+-# Don't read the user's ~/.rhosts and ~/.shosts files
+-#IgnoreRhosts yes
+-
+-# To disable tunneled clear text passwords, change to "no" here!
+-#PasswordAuthentication yes
+-#PermitEmptyPasswords no
+-
+-# Change to "yes" to enable keyboard-interactive authentication.  Depending on
+-# the system's configuration, this may involve passwords, challenge-response,
+-# one-time passwords or some combination of these and other methods.
+-# Beware issues with some PAM modules and threads.
+-KbdInteractiveAuthentication no
+-
+-# Kerberos options
+-#KerberosAuthentication no
+-#KerberosOrLocalPasswd yes
+-#KerberosTicketCleanup yes
+-#KerberosGetAFSToken no
+-
+-# GSSAPI options
+-#GSSAPIAuthentication no
+-#GSSAPICleanupCredentials yes
+-#GSSAPIStrictAcceptorCheck yes
+-#GSSAPIKeyExchange no
+-
+-# Set this to 'yes' to enable PAM authentication, account processing,
+-# and session processing. If this is enabled, PAM authentication will
+-# be allowed through the KbdInteractiveAuthentication and
+-# PasswordAuthentication.  Depending on your PAM configuration,
+-# PAM authentication via KbdInteractiveAuthentication may bypass
+-# the setting of "PermitRootLogin prohibit-password".
+-# If you just want the PAM account and session checks to run without
+-# PAM authentication, then enable this but set PasswordAuthentication
+-# and KbdInteractiveAuthentication to 'no'.
++# Autenticación
++PermitRootLogin no
++PasswordAuthentication no
++PubkeyAuthentication yes
++AuthorizedKeysFile .ssh/authorized_keys
++PermitEmptyPasswords no
++ChallengeResponseAuthentication no
+ UsePAM yes
+ 
+-#AllowAgentForwarding yes
+-#AllowTcpForwarding yes
+-#GatewayPorts no
+-X11Forwarding yes
+-#X11DisplayOffset 10
+-#X11UseLocalhost yes
+-#PermitTTY yes
++# Usuarios permitidos
++AllowUsers administrator 
++# Restricciones
++X11Forwarding no
++AllowTcpForwarding no
++AllowAgentForwarding no
++PermitUserEnvironment no
++PermitTunnel no
+ PrintMotd no
+-#PrintLastLog yes
+-#TCPKeepAlive yes
+-#PermitUserEnvironment no
+-#Compression delayed
+-#ClientAliveInterval 0
+-#ClientAliveCountMax 3
+-#UseDNS no
+-#PidFile /run/sshd.pid
+-#MaxStartups 10:30:100
+-#PermitTunnel no
+-#ChrootDirectory none
+-#VersionAddendum none
++PrintLastLog yes
++StrictModes yes
++IgnoreRhosts yes
+ 
+-# no default banner path
+-#Banner none
++# Timeouts — ajustados según Lynis SSH-7408
++LoginGraceTime 60
++MaxAuthTries 3
++MaxSessions 2
++ClientAliveInterval 300
++ClientAliveCountMax 2
++TCPKeepAlive no
+ 
+-# Allow client to pass locale and color environment variables
+-AcceptEnv LANG LC_* COLORTERM NO_COLOR
++# Logging — CIS 5.2.5
++SyslogFacility AUTH
++LogLevel VERBOSE
+ 
+-# override default of no subsystems
+-Subsystem	sftp	/usr/lib/openssh/sftp-server
+-
+-# Example of overriding settings on a per-user basis
+-#Match User anoncvs
+-#	X11Forwarding no
+-#	AllowTcpForwarding no
+-#	PermitTTY no
+-#	ForceCommand cvs server
++UseDNS no
++Banner /etc/issue.net
++AcceptEnv LANG LC_*
++Subsystem sftp /usr/lib/openssh/sftp-server
+
+changed: [debian-ese]
+
+TASK [ssh_hardening : Asegurar que SSH está habilitado] ************************
+ok: [debian-ese]
+
+TASK [users_privileges : Instalar libpam-pwquality] ****************************
+The following additional packages will be installed:
+  cracklib-runtime libcrack2 libpwquality-common libpwquality1
+The following NEW packages will be installed:
+  cracklib-runtime libcrack2 libpam-pwquality libpwquality-common
+  libpwquality1
+0 upgraded, 5 newly installed, 0 to remove and 0 not upgraded.
+changed: [debian-ese]
+
+TASK [users_privileges : Configurar pwquality.conf (CIS 5.4.1)] ****************
+--- before: /etc/security/pwquality.conf
++++ after: /etc/security/pwquality.conf
+@@ -1,79 +1,7 @@
+-# Configuration for systemwide password quality limits
+-# Defaults:
+-#
+-# Number of characters in the new password that must not be present in the
+-# old password.
+-# difok = 1
+-#
+-# Minimum acceptable size for the new password (plus one if
+-# credits are not disabled which is the default). (See pam_cracklib manual.)
+-# Cannot be set to lower value than 6.
+-# minlen = 8
+-#
+-# The maximum credit for having digits in the new password. If less than 0
+-# it is the minimum number of digits in the new password.
+-# dcredit = 0
+-#
+-# The maximum credit for having uppercase characters in the new password.
+-# If less than 0 it is the minimum number of uppercase characters in the new
+-# password.
+-# ucredit = 0
+-#
+-# The maximum credit for having lowercase characters in the new password.
+-# If less than 0 it is the minimum number of lowercase characters in the new
+-# password.
+-# lcredit = 0
+-#
+-# The maximum credit for having other characters in the new password.
+-# If less than 0 it is the minimum number of other characters in the new
+-# password.
+-# ocredit = 0
+-#
+-# The minimum number of required classes of characters for the new
+-# password (digits, uppercase, lowercase, others).
+-# minclass = 0
+-#
+-# The maximum number of allowed consecutive same characters in the new password.
+-# The check is disabled if the value is 0.
+-# maxrepeat = 0
+-#
+-# The maximum number of allowed consecutive characters of the same class in the
+-# new password.
+-# The check is disabled if the value is 0.
+-# maxclassrepeat = 0
+-#
+-# Whether to check for the words from the passwd entry GECOS string of the user.
+-# The check is enabled if the value is not 0.
+-# gecoscheck = 0
+-#
+-# Whether to check for the words from the cracklib dictionary.
+-# The check is enabled if the value is not 0.
+-# dictcheck = 1
+-#
+-# Whether to check if it contains the user name in some form.
+-# The check is enabled if the value is not 0.
+-# usercheck = 1
+-#
+-# Length of substrings from the username to check for in the password
+-# The check is enabled if the value is greater than 0 and usercheck is enabled.
+-# usersubstr = 0
+-#
+-# Whether the check is enforced by the PAM module and possibly other
+-# applications.
+-# The new password is rejected if it fails the check and the value is not 0.
+-# enforcing = 1
+-#
+-# Path to the cracklib dictionaries. Default is to use the cracklib default.
+-# dictpath =
+-#
+-# Prompt user at most N times before returning with error. The default is 1.
+-# retry = 3
+-#
+-# Enforces pwquality checks on the root user password.
+-# Enabled if the option is present.
+-# enforce_for_root
+-#
+-# Skip testing the password quality for users that are not present in the
+-# /etc/passwd file.
+-# Enabled if the option is present.
+-# local_users_only
++minlen = 14
++minclass = 4
++maxrepeat = 3
++dcredit = -1
++ucredit = -1
++ocredit = -1
++lcredit = -1
+
+changed: [debian-ese]
+
+TASK [users_privileges : Configurar login.defs (CIS 5.4.1)] ********************
+--- before: /etc/login.defs (content)
++++ after: /etc/login.defs (content)
+@@ -94,7 +94,7 @@
+ #	PASS_MIN_DAYS	Minimum number of days allowed between password changes.
+ #	PASS_WARN_AGE	Number of days warning given before a password expires.
+ #
+-PASS_MAX_DAYS	99999
++PASS_MAX_DAYS        90
+ PASS_MIN_DAYS	0
+ PASS_WARN_AGE	7
+ 
+
+changed: [debian-ese] => (item={'regexp': '^PASS_MAX_DAYS', 'line': 'PASS_MAX_DAYS        90'})
+--- before: /etc/login.defs (content)
++++ after: /etc/login.defs (content)
+@@ -95,7 +95,7 @@
+ #	PASS_WARN_AGE	Number of days warning given before a password expires.
+ #
+ PASS_MAX_DAYS        90
+-PASS_MIN_DAYS	0
++PASS_MIN_DAYS        1
+ PASS_WARN_AGE	7
+ 
+ #
+
+changed: [debian-ese] => (item={'regexp': '^PASS_MIN_DAYS', 'line': 'PASS_MIN_DAYS        1'})
+--- before: /etc/login.defs (content)
++++ after: /etc/login.defs (content)
+@@ -96,7 +96,7 @@
+ #
+ PASS_MAX_DAYS        90
+ PASS_MIN_DAYS        1
+-PASS_WARN_AGE	7
++PASS_WARN_AGE        14
+ 
+ #
+ # Min/max values for automatic uid selection in useradd(8)
+
+changed: [debian-ese] => (item={'regexp': '^PASS_WARN_AGE', 'line': 'PASS_WARN_AGE        14'})
+--- before: /etc/login.defs (content)
++++ after: /etc/login.defs (content)
+@@ -190,3 +190,4 @@
+ # Debian.
+ #
+ USERGROUPS_ENAB yes
++UMASK                027
+
+changed: [debian-ese] => (item={'regexp': '^UMASK', 'line': 'UMASK                027'})
+--- before: /etc/login.defs (content)
++++ after: /etc/login.defs (content)
+@@ -191,3 +191,4 @@
+ #
+ USERGROUPS_ENAB yes
+ UMASK                027
++YESCRYPT_COST_FACTOR 7
+
+changed: [debian-ese] => (item={'regexp': '^YESCRYPT_COST_FACTOR', 'line': 'YESCRYPT_COST_FACTOR 7'})
+
+TASK [users_privileges : Configurar umask en /etc/bash.bashrc (AUTH-9328)] *****
+--- before: /etc/bash.bashrc (content)
++++ after: /etc/bash.bashrc (content)
+@@ -56,3 +56,4 @@
+ 		fi
+ 	}
+ fi
++umask 027
+
+changed: [debian-ese]
+
+TASK [users_privileges : Configurar umask en /etc/profile (AUTH-9328)] *********
+--- before: /etc/profile (content)
++++ after: /etc/profile (content)
+@@ -32,3 +32,4 @@
+   done
+   unset i
+ fi
++umask 027
+
+changed: [debian-ese]
+
+TASK [users_privileges : Deshabilitar shell de cuentas de sistema (CIS 5.4.2)] ***
+changed: [debian-ese] => (item=daemon)
+changed: [debian-ese] => (item=bin)
+changed: [debian-ese] => (item=sys)
+changed: [debian-ese] => (item=games)
+changed: [debian-ese] => (item=man)
+changed: [debian-ese] => (item=lp)
+changed: [debian-ese] => (item=mail)
+changed: [debian-ese] => (item=news)
+changed: [debian-ese] => (item=uucp)
+changed: [debian-ese] => (item=proxy)
+changed: [debian-ese] => (item=www-data)
+changed: [debian-ese] => (item=backup)
+changed: [debian-ese] => (item=list)
+changed: [debian-ese] => (item=irc)
+changed: [debian-ese] => (item=gnats)
+
+TASK [users_privileges : Asegurar permisos de /etc/sudoers.d (CIS 5.3)] ********
+--- before
++++ after
+@@ -1,2 +1,2 @@
+-mode: '0755'
++mode: '0750'
+ path: /etc/sudoers.d
+
+changed: [debian-ese]
+
+TASK [users_privileges : Configurar política de sudo (CIS 5.3)] ****************
+--- before
++++ after: /etc/sudoers.d/ese-admins
+@@ -0,0 +1,6 @@
++Defaults timestamp_timeout=5
++Defaults requiretty
++Defaults logfile="/var/log/sudo.log"
++Defaults log_input,log_output
++
++administrator ALL=(ALL) ALL
+
+changed: [debian-ese]
+
+TASK [users_privileges : Corregir permisos de archivos críticos (CIS 6.1 / FILE-7524)] ***
+ok: [debian-ese] => (item={'path': '/etc/ssh/sshd_config', 'mode': '0600'})
+--- before
++++ after
+@@ -1,2 +1,2 @@
+-mode: '0644'
++mode: '0600'
+ path: /etc/crontab
+
+changed: [debian-ese] => (item={'path': '/etc/crontab', 'mode': '0600'})
+--- before
++++ after
+@@ -1,2 +1,2 @@
+-mode: '0755'
++mode: '0700'
+ path: /etc/cron.d
+
+changed: [debian-ese] => (item={'path': '/etc/cron.d', 'mode': '0700'})
+--- before
++++ after
+@@ -1,2 +1,2 @@
+-mode: '0755'
++mode: '0700'
+ path: /etc/cron.daily
+
+changed: [debian-ese] => (item={'path': '/etc/cron.daily', 'mode': '0700'})
+--- before
++++ after
+@@ -1,2 +1,2 @@
+-mode: '0755'
++mode: '0700'
+ path: /etc/cron.hourly
+
+changed: [debian-ese] => (item={'path': '/etc/cron.hourly', 'mode': '0700'})
+--- before
++++ after
+@@ -1,2 +1,2 @@
+-mode: '0755'
++mode: '0700'
+ path: /etc/cron.weekly
+
+changed: [debian-ese] => (item={'path': '/etc/cron.weekly', 'mode': '0700'})
+--- before
++++ after
+@@ -1,2 +1,2 @@
+-mode: '0755'
++mode: '0700'
+ path: /etc/cron.monthly
+
+changed: [debian-ese] => (item={'path': '/etc/cron.monthly', 'mode': '0700'})
+
+TASK [users_privileges : Configurar banner /etc/issue.net (BANN-7130 / CIS 1.7)] ***
+--- before: /etc/issue.net
++++ after: /etc/issue.net
+@@ -1 +1,3 @@
+-Debian GNU/Linux 13
++WARNING: Authorized access only.
++Unauthorized access is prohibited and will be prosecuted.
++All activity is monitored and logged.
+
+changed: [debian-ese]
+
+TASK [users_privileges : Configurar banner /etc/issue (BANN-7126 / CIS 1.7)] ***
+--- before: /etc/issue
++++ after: /etc/issue
+@@ -1,2 +1,3 @@
+-Debian GNU/Linux 13 \n \l
+-
++WARNING: Authorized access only.
++Unauthorized access is prohibited and will be prosecuted.
++All activity is monitored and logged.
+
+changed: [debian-ese]
+
+TASK [auditd : Instalar auditd y plugins] **************************************
+The following additional packages will be installed:
+  libauparse0t64
+The following NEW packages will be installed:
+  audispd-plugins auditd libauparse0t64
+0 upgraded, 3 newly installed, 0 to remove and 0 not upgraded.
+changed: [debian-ese]
+
+TASK [auditd : Recargar systemd daemon tras instalación] ***********************
+ok: [debian-ese]
+
+TASK [auditd : Habilitar auditd via SysV (compatibilidad Debian)] **************
+ok: [debian-ese]
+
+TASK [auditd : Arrancar auditd] ************************************************
+ok: [debian-ese]
+
+TASK [auditd : Desplegar reglas de auditoría CIS (CIS 4.1)] ********************
+--- before
++++ after: /etc/audit/rules.d/cis.rules
+@@ -0,0 +1,45 @@
++# Reglas CIS Level 1 — ese.uy
++-D
++-b 8192
++
++# Identidad y autenticación
++-w /etc/passwd -p wa -k identity
++-w /etc/shadow -p wa -k identity
++-w /etc/group -p wa -k identity
++-w /etc/gshadow -p wa -k identity
++-w /etc/sudoers -p wa -k sudoers
++-w /etc/sudoers.d/ -p wa -k sudoers
++
++# SSH
++-w /etc/ssh/sshd_config -p wa -k sshd
++
++# Comandos ejecutados como root
++-a always,exit -F arch=b64 -S execve -F euid=0 -k root_commands
++-a always,exit -F arch=b32 -S execve -F euid=0 -k root_commands
++
++# Escalada de privilegios
++-a always,exit -F arch=b64 -S setuid -k privilege_escalation
++-a always,exit -F arch=b64 -S setgid -k privilege_escalation
++
++# Modificación de tiempo
++-a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time_change
++-a always,exit -F arch=b32 -S adjtimex -S settimeofday -k time_change
++
++# Módulos de kernel
++-w /sbin/insmod -p x -k modules
++-w /sbin/rmmod -p x -k modules
++-w /sbin/modprobe -p x -k modules
++-a always,exit -F arch=b64 -S init_module -S delete_module -k modules
++
++# Login / Logout
++-w /var/log/lastlog -p wa -k logins
++-w /var/run/faillock/ -p wa -k logins
++
++# Sudo
++-w /var/log/sudo.log -p wa -k sudo_log
++
++# Wazuh
++-w /var/ossec/ -p wa -k wazuh
++
++# Reglas inmutables
++-e 2
+
+changed: [debian-ese]
+
+TASK [auditd : Asegurar que /etc/audit existe] *********************************
+ok: [debian-ese]
+
+TASK [auditd : Verificar si auditd.conf existe] ********************************
+ok: [debian-ese]
+
+TASK [auditd : Configurar retención de logs en auditd.conf (CIS 4.1.1)] ********
+--- before: /etc/audit/auditd.conf (content)
++++ after: /etc/audit/auditd.conf (content)
+@@ -9,7 +9,7 @@
+ log_format = ENRICHED
+ flush = INCREMENTAL_ASYNC
+ freq = 50
+-max_log_file = 8
++max_log_file = 50
+ num_logs = 5
+ priority_boost = 4
+ name_format = NONE
+
+changed: [debian-ese] => (item={'regexp': '^max_log_file ', 'line': 'max_log_file = 50'})
+--- before: /etc/audit/auditd.conf (content)
++++ after: /etc/audit/auditd.conf (content)
+@@ -10,7 +10,7 @@
+ flush = INCREMENTAL_ASYNC
+ freq = 50
+ max_log_file = 50
+-num_logs = 5
++num_logs = 10
+ priority_boost = 4
+ name_format = NONE
+ ##name = mydomain
+
+changed: [debian-ese] => (item={'regexp': '^num_logs ', 'line': 'num_logs = 10'})
+ok: [debian-ese] => (item={'regexp': '^max_log_file_action', 'line': 'max_log_file_action = ROTATE'})
+
+TASK [rsyslog : Instalar rsyslog] **********************************************
+The following additional packages will be installed:
+  libestr0 libfastjson4 liblognorm5
+Suggested packages:
+  rsyslog-doc rsyslog-mysql | rsyslog-pgsql rsyslog-mongodb
+  rsyslog-elasticsearch rsyslog-kafka rsyslog-hiredis rsyslog-snmp
+  rsyslog-kubernetes rsyslog-docker rsyslog-clickhouse rsyslog-openssl
+  | rsyslog-gnutls rsyslog-gssapi rsyslog-relp
+The following NEW packages will be installed:
+  libestr0 libfastjson4 liblognorm5 rsyslog
+0 upgraded, 4 newly installed, 0 to remove and 0 not upgraded.
+changed: [debian-ese]
+
+TASK [rsyslog : Recargar systemd daemon] ***************************************
+ok: [debian-ese]
+
+TASK [rsyslog : Habilitar rsyslog] *********************************************
+ok: [debian-ese]
+
+TASK [rsyslog : Arrancar rsyslog] **********************************************
+ok: [debian-ese]
+
+TASK [rsyslog : Verificar si logrotate config de rsyslog existe] ***************
+ok: [debian-ese]
+
+TASK [rsyslog : Ajustar retención en logrotate a 13 semanas (CIS 4.2.3)] *******
+--- before: /etc/logrotate.d/rsyslog
++++ after: /etc/logrotate.d/rsyslog
+@@ -5,7 +5,7 @@
+ /var/log/user.log
+ /var/log/cron.log
+ {
+-	rotate 4
++	rotate 13
+ 	weekly
+ 	missingok
+ 	notifempty
+
+changed: [debian-ese]
+
+TASK [rsyslog : Asegurar permisos en logs de autenticación (CIS 4.2.4)] ********
+ok: [debian-ese] => (item=/var/log/auth.log)
+ok: [debian-ese] => (item=/var/log/syslog)
+ok: [debian-ese] => (item=/var/log/kern.log)
+
+TASK [rsyslog : Verificar si rsyslog.conf existe] ******************************
+ok: [debian-ese]
+
+TASK [rsyslog : Enviar logs al SIEM Wazuh (LOGG-2154)] *************************
+--- before: /etc/rsyslog.conf (content)
++++ after: /etc/rsyslog.conf (content)
+@@ -67,3 +67,4 @@
+ # Emergencies are sent to everybody logged in.
+ #
+ *.emerg				:omusrmsg:*
++*.* @192.168.56.50:514
+
+changed: [debian-ese]
+
+TASK [extra_hardening : Instalar paquetes de seguridad recomendados por Lynis] ***
+The following additional packages will be installed:
+  distro-info fonts-lato javascript-common libapt-pkg-perl libdpkg-perl
+  libfile-fcntllock-perl libfile-fnmatch-perl libintl-perl libintl-xs-perl
+  libjs-jquery libmodule-find-perl libproc-processtable-perl libruby
+  libruby3.3 libsensors-config libsensors5 libsort-naturally-perl
+  libterm-readkey-perl libyaml-0-2 python3-autocommand python3-inflect
+  python3-jaraco.context python3-jaraco.functools python3-jaraco.text
+  python3-more-itertools python3-pkg-resources python3-pyasyncore
+  python3-pyinotify python3-setuptools python3-systemd python3-typeguard
+  python3-typing-extensions python3-zipp racc rake ruby ruby-csv ruby-debian
+  ruby-did-you-mean ruby-domain-name ruby-erubi ruby-ffi ruby-gettext
+  ruby-http-cookie ruby-httpclient ruby-locale ruby-mini-portile2
+  ruby-net-telnet ruby-ruby2-keywords ruby-rubygems ruby-sdbm ruby-soap4r
+  ruby-sqlite3 ruby-sys-proctable ruby-text ruby-unf ruby-unf-ext ruby-unicode
+  ruby-webrick ruby-xmlparser ruby-xmlrpc ruby3.3 rubygems-integration sqlite3
+  unzip whois zip
+Suggested packages:
+  w3m | www-browser xdg-utils shunit2 mailx monit apache2 | lighttpd | httpd
+  debian-keyring debian-tag2upload-keyring gcc | c-compiler binutils patch git
+  bzr lm-sensors needrestart-session | libnotify-bin python-pyinotify-doc
+  python-setuptools-doc ri ruby-dev bundler sqlite3-doc isag
+The following NEW packages will be installed:
+  acct apt-listbugs apt-show-versions debsums distro-info fail2ban fonts-lato
+  javascript-common libapt-pkg-perl libdpkg-perl libfile-fcntllock-perl
+  libfile-fnmatch-perl libintl-perl libintl-xs-perl libjs-jquery
+  libmodule-find-perl libpam-tmpdir libproc-processtable-perl libruby
+  libruby3.3 libsensors-config libsensors5 libsort-naturally-perl
+  libterm-readkey-perl libyaml-0-2 needrestart python3-autocommand
+  python3-inflect python3-jaraco.context python3-jaraco.functools
+  python3-jaraco.text python3-more-itertools python3-pkg-resources
+  python3-pyasyncore python3-pyinotify python3-setuptools python3-systemd
+  python3-typeguard python3-typing-extensions python3-zipp racc rake ruby
+  ruby-csv ruby-debian ruby-did-you-mean ruby-domain-name ruby-erubi ruby-ffi
+  ruby-gettext ruby-http-cookie ruby-httpclient ruby-locale ruby-mini-portile2
+  ruby-net-telnet ruby-ruby2-keywords ruby-rubygems ruby-sdbm ruby-soap4r
+  ruby-sqlite3 ruby-sys-proctable ruby-text ruby-unf ruby-unf-ext ruby-unicode
+  ruby-webrick ruby-xmlparser ruby-xmlrpc ruby3.3 rubygems-integration sqlite3
+  sysstat unzip whois zip
+0 upgraded, 75 newly installed, 0 to remove and 0 not upgraded.
+changed: [debian-ese]
+
+TASK [extra_hardening : Configurar fail2ban para SSH (DEB-0880)] ***************
+--- before
++++ after: /etc/fail2ban/jail.local
+@@ -0,0 +1,12 @@
++[DEFAULT]
++bantime  = 3600
++findtime = 600
++maxretry = 3
++backend  = systemd
++
++[sshd]
++enabled  = true
++port     = ssh
++logpath  = /var/log/auth.log
++maxretry = 3
++bantime  = 3600
+
+changed: [debian-ese]
+
+TASK [extra_hardening : Habilitar fail2ban] ************************************
+ok: [debian-ese]
+
+TASK [extra_hardening : Arrancar fail2ban] *************************************
+ok: [debian-ese]
+
+TASK [extra_hardening : Habilitar acct — accounting de procesos (ACCT-9622)] ***
+ok: [debian-ese]
+
+TASK [extra_hardening : Verificar si /etc/default/sysstat existe] **************
+ok: [debian-ese]
+
+TASK [extra_hardening : Habilitar sysstat (ACCT-9626)] *************************
+--- before: /etc/default/sysstat (content)
++++ after: /etc/default/sysstat (content)
+@@ -6,5 +6,5 @@
+ # Should sadc collect system activity informations? Valid values
+ # are "true" and "false". Please do not put other values, they
+ # will be overwritten by debconf!
+-ENABLED="false"
++ENABLED="true"
+ 
+
+changed: [debian-ese]
+
+TASK [extra_hardening : Habilitar sysstat servicio] ****************************
+ok: [debian-ese]
+
+TASK [extra_hardening : Arrancar sysstat] **************************************
+changed: [debian-ese]
+
+TASK [extra_hardening : Verificar si resolved.conf existe] *********************
+ok: [debian-ese]
+
+TASK [extra_hardening : Configurar DNS secundario en systemd-resolved (NETW-2705)] ***
+skipping: [debian-ese]
+
+TASK [wazuh_agent : Instalar dependencias para repositorio Wazuh] **************
+The following NEW packages will be installed:
+  apt-transport-https
+0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+changed: [debian-ese]
+
+TASK [wazuh_agent : Eliminar keyring Wazuh previo si existe] *******************
+ok: [debian-ese]
+
+TASK [wazuh_agent : Eliminar repositorio Wazuh previo si existe] ***************
+ok: [debian-ese]
+
+TASK [wazuh_agent : Descargar clave GPG de Wazuh] ******************************
+changed: [debian-ese]
+
+TASK [wazuh_agent : Importar clave GPG de Wazuh] *******************************
+changed: [debian-ese]
+
+TASK [wazuh_agent : Asegurar permisos del keyring Wazuh] ***********************
+ok: [debian-ese]
+
+TASK [wazuh_agent : Agregar repositorio Wazuh] *********************************
+--- before
++++ after: /etc/apt/sources.list.d/wazuh.list
+@@ -0,0 +1 @@
++deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main
+
+changed: [debian-ese]
+
+TASK [wazuh_agent : Actualizar cache apt tras agregar repositorio Wazuh] *******
+changed: [debian-ese]
+
+TASK [wazuh_agent : Instalar wazuh-agent] **************************************
+The following NEW packages will be installed:
+  wazuh-agent
+0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+changed: [debian-ese]
+
+TASK [wazuh_agent : Configurar IP del Wazuh Manager] ***************************
+ok: [debian-ese]
+
+TASK [wazuh_agent : Habilitar y arrancar wazuh-agent] **************************
+changed: [debian-ese]
+
+RUNNING HANDLER [ssh_hardening : Restart SSH] **********************************
+changed: [debian-ese]
+
+RUNNING HANDLER [auditd : Reload auditd rules] *********************************
+changed: [debian-ese]
+
+RUNNING HANDLER [auditd : Restart auditd] **************************************
+changed: [debian-ese]
+
+RUNNING HANDLER [rsyslog : Restart rsyslog] ************************************
+changed: [debian-ese]
+
+RUNNING HANDLER [extra_hardening : Restart fail2ban] ***************************
+changed: [debian-ese]
+
+RUNNING HANDLER [extra_hardening : Restart sysstat] ****************************
+changed: [debian-ese]
+
+TASK [Instalar Lynis] **********************************************************
+The following additional packages will be installed:
+  menu
+Suggested packages:
+  debsecan tripwire samhain aide menu-l10n
+The following NEW packages will be installed:
+  lynis menu
+0 upgraded, 2 newly installed, 0 to remove and 0 not upgraded.
+changed: [debian-ese]
+
+TASK [Ejecutar auditoría Lynis] ************************************************
+ok: [debian-ese]
+
+TASK [Mostrar Hardening Index] *************************************************
+ok: [debian-ese]
+
+TASK [Score final] *************************************************************
+ok: [debian-ese] => 
+  msg: '2026-06-25 18:18:01 Hardening index : [87] [#################   ]'
+
+PLAY RECAP *********************************************************************
+debian-ese                 : ok=85   changed=49   unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+

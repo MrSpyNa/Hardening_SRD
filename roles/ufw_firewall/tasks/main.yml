@@ -1,0 +1,62 @@
+---
+# CIS 3.5 — Firewall UFW deny by default
+
+- name: Instalar UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+
+- name: Resetear reglas UFW
+  community.general.ufw:
+    state: reset
+
+- name: Política por defecto — denegar entrante
+  community.general.ufw:
+    direction: incoming
+    policy: deny
+
+- name: Política por defecto — permitir saliente
+  community.general.ufw:
+    direction: outgoing
+    policy: allow
+
+- name: Política por defecto — denegar forward
+  community.general.ufw:
+    direction: routed
+    policy: deny
+
+- name: Permitir SSH (acceso desde Windows/MobaXterm)
+  community.general.ufw:
+    rule: allow
+    port: "{{ ssh_port }}"
+    proto: tcp
+    comment: "SSH administracion"
+
+- name: Permitir Wazuh — eventos
+  community.general.ufw:
+    rule: allow
+    src: "{{ wazuh_manager_ip }}"
+    port: "1514"
+    proto: tcp
+    comment: "Wazuh Manager eventos"
+
+- name: Permitir Wazuh — enrollment
+  community.general.ufw:
+    rule: allow
+    src: "{{ wazuh_manager_ip }}"
+    port: "1515"
+    proto: tcp
+    comment: "Wazuh Manager enrollment"
+
+- name: Habilitar logging UFW
+  community.general.ufw:
+    logging: "medium"
+
+- name: Habilitar UFW
+  community.general.ufw:
+    state: enabled
+
+- name: Habilitar UFW al inicio
+  ansible.builtin.systemd:
+    name: ufw
+    enabled: true

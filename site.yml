@@ -1,0 +1,50 @@
+---
+- name: Hardening CIS Level 1 — Debian 13 — ese.uy
+  hosts: debian_servers
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Verificar que el sistema es Debian
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == "Debian"
+        fail_msg: "Este playbook es exclusivo para Debian."
+
+    - name: Actualizar cache de apt
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  roles:
+    - role: filesystem           # CIS 1.1  — Filesystems, módulos y protocolos deshabilitados
+    - role: services             # CIS 2.x  — Deshabilitar servicios innecesarios
+    - role: kernel_parameters    # CIS 3.x  — Parámetros sysctl
+    - role: ufw_firewall         # CIS 3.5  — Firewall UFW deny by default
+    - role: ssh_hardening        # CIS 5.2  — Hardening SSH
+    - role: users_privileges     # CIS 5.4  — Usuarios, sudo, umask, permisos, banners
+    - role: auditd               # CIS 4.1  — Auditoría de eventos
+    - role: rsyslog              # CIS 4.2  — Logging centralizado
+    - role: extra_hardening      # Lynis    — fail2ban, sysstat, acct, paquetes adicionales
+    - role: wazuh_agent          # SIEM     — Agente Wazuh
+
+  post_tasks:
+    - name: Instalar Lynis
+      ansible.builtin.apt:
+        name: lynis
+        state: present
+
+    - name: Ejecutar auditoría Lynis
+      ansible.builtin.command: lynis audit system --quiet --no-colors
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar Hardening Index
+      ansible.builtin.shell: grep "Hardening index" /var/log/lynis.log | tail -1
+      register: lynis_score
+      changed_when: false
+      failed_when: false
+
+    - name: Score final
+      ansible.builtin.debug:
+        msg: "{{ lynis_score.stdout }}"

@@ -1,0 +1,62 @@
+---
+# CIS 4.2 — Logging del sistema
+
+- name: Instalar rsyslog
+  ansible.builtin.apt:
+    name: rsyslog
+    state: present
+
+- name: Recargar systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Habilitar rsyslog
+  ansible.builtin.command: systemctl enable rsyslog
+  changed_when: false
+  failed_when: false
+
+- name: Arrancar rsyslog
+  ansible.builtin.service:
+    name: rsyslog
+    state: started
+  failed_when: false
+
+- name: Verificar si logrotate config de rsyslog existe
+  ansible.builtin.stat:
+    path: /etc/logrotate.d/rsyslog
+  register: logrotate_rsyslog
+
+- name: Ajustar retención en logrotate a 13 semanas (CIS 4.2.3)
+  ansible.builtin.replace:
+    path: /etc/logrotate.d/rsyslog
+    regexp: '(\s+)rotate \d+'
+    replace: '\1rotate 13'
+  when: logrotate_rsyslog.stat.exists
+  notify: Restart rsyslog
+
+- name: Asegurar permisos en logs de autenticación (CIS 4.2.4)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: root
+    group: adm
+    mode: '0640'
+    state: touch
+  loop:
+    - /var/log/auth.log
+    - /var/log/syslog
+    - /var/log/kern.log
+  changed_when: false
+
+- name: Verificar si rsyslog.conf existe
+  ansible.builtin.stat:
+    path: /etc/rsyslog.conf
+  register: rsyslog_conf
+
+- name: Enviar logs al SIEM Wazuh (LOGG-2154)
+  ansible.builtin.lineinfile:
+    path: /etc/rsyslog.conf
+    regexp: "^\\*\\.\\* @{{ wazuh_manager_ip }}"
+    line: "*.* @{{ wazuh_manager_ip }}:514"
+    state: present
+  when: rsyslog_conf.stat.exists
+  notify: Restart rsyslog

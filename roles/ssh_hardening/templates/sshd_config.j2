@@ -1,0 +1,51 @@
+# /etc/ssh/sshd_config
+# Hardening CIS Level 1 — ese.uy
+# Gestionado por Ansible — NO editar manualmente
+
+Port {{ ssh_port }}
+Protocol 2
+
+# Algoritmos seguros
+KexAlgorithms curve25519-sha256,ecdh-sha2-nistp521
+Ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr
+MACs hmac-sha2-512,hmac-sha2-256
+
+# Autenticación
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+UsePAM yes
+
+# Usuarios permitidos
+AllowUsers {% for user in ssh_allowed_users %}{{ user }} {% endfor %}
+
+# Restricciones
+X11Forwarding no
+AllowTcpForwarding no
+AllowAgentForwarding no
+PermitUserEnvironment no
+PermitTunnel no
+PrintMotd no
+PrintLastLog yes
+StrictModes yes
+IgnoreRhosts yes
+
+# Timeouts — ajustados según Lynis SSH-7408
+LoginGraceTime 60
+MaxAuthTries 3
+MaxSessions 2
+ClientAliveInterval 300
+ClientAliveCountMax 2
+TCPKeepAlive no
+
+# Logging — CIS 5.2.5
+SyslogFacility AUTH
+LogLevel VERBOSE
+
+UseDNS no
+Banner /etc/issue.net
+AcceptEnv LANG LC_*
+Subsystem sftp /usr/lib/openssh/sftp-server

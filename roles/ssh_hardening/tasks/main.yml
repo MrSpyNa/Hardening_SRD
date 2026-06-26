@@ -1,0 +1,23 @@
+---
+# CIS 5.2 — Hardening SSH
+
+- name: Asegurar que OpenSSH está instalado
+  ansible.builtin.apt:
+    name: openssh-server
+    state: present
+
+- name: Aplicar configuración SSH segura
+  ansible.builtin.template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: '0600'
+    validate: '/usr/sbin/sshd -t -f %s'
+  notify: Restart SSH
+
+- name: Asegurar que SSH está habilitado
+  ansible.builtin.systemd:
+    name: ssh
+    state: started
+    enabled: true

@@ -1,0 +1,131 @@
+---
+# CIS 5.3 / 5.4 — Usuarios, privilegios, umask, contraseñas, permisos y banners
+
+- name: Instalar libpam-pwquality
+  ansible.builtin.apt:
+    name: libpam-pwquality
+    state: present
+
+- name: Configurar pwquality.conf (CIS 5.4.1)
+  ansible.builtin.copy:
+    dest: /etc/security/pwquality.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      minlen = 14
+      minclass = 4
+      maxrepeat = 3
+      dcredit = -1
+      ucredit = -1
+      ocredit = -1
+      lcredit = -1
+
+- name: Configurar login.defs (CIS 5.4.1)
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  loop:
+    - { regexp: '^PASS_MAX_DAYS',        line: 'PASS_MAX_DAYS        90'  }
+    - { regexp: '^PASS_MIN_DAYS',        line: 'PASS_MIN_DAYS        1'   }
+    - { regexp: '^PASS_WARN_AGE',        line: 'PASS_WARN_AGE        14'  }
+    - { regexp: '^UMASK',                line: 'UMASK                027' }
+    - { regexp: '^YESCRYPT_COST_FACTOR', line: 'YESCRYPT_COST_FACTOR 7'  }
+
+- name: Configurar umask en /etc/bash.bashrc (AUTH-9328)
+  ansible.builtin.lineinfile:
+    path: /etc/bash.bashrc
+    regexp: '^umask'
+    line: 'umask 027'
+    state: present
+
+- name: Configurar umask en /etc/profile (AUTH-9328)
+  ansible.builtin.lineinfile:
+    path: /etc/profile
+    regexp: '^umask'
+    line: 'umask 027'
+    state: present
+
+- name: Deshabilitar shell de cuentas de sistema (CIS 5.4.2)
+  ansible.builtin.user:
+    name: "{{ item }}"
+    shell: /sbin/nologin
+  loop:
+    - daemon
+    - bin
+    - sys
+    - games
+    - man
+    - lp
+    - mail
+    - news
+    - uucp
+    - proxy
+    - www-data
+    - backup
+    - list
+    - irc
+    - gnats
+  failed_when: false
+
+- name: Asegurar permisos de /etc/sudoers.d (CIS 5.3)
+  ansible.builtin.file:
+    path: /etc/sudoers.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+
+- name: Configurar política de sudo (CIS 5.3)
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/ese-admins
+    owner: root
+    group: root
+    mode: '0440'
+    validate: '/usr/sbin/visudo -cf %s'
+    content: |
+      Defaults timestamp_timeout=5
+      Defaults requiretty
+      Defaults logfile="/var/log/sudo.log"
+      Defaults log_input,log_output
+
+      {{ admin_user }} ALL=(ALL) ALL
+
+- name: Corregir permisos de archivos críticos (CIS 6.1 / FILE-7524)
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    mode: "{{ item.mode }}"
+    owner: root
+    group: root
+  loop:
+    - { path: '/etc/ssh/sshd_config', mode: '0600' }
+    - { path: '/etc/crontab',         mode: '0600' }
+    - { path: '/etc/cron.d',          mode: '0700' }
+    - { path: '/etc/cron.daily',      mode: '0700' }
+    - { path: '/etc/cron.hourly',     mode: '0700' }
+    - { path: '/etc/cron.weekly',     mode: '0700' }
+    - { path: '/etc/cron.monthly',    mode: '0700' }
+
+- name: Configurar banner /etc/issue.net (BANN-7130 / CIS 1.7)
+  ansible.builtin.copy:
+    dest: /etc/issue.net
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      WARNING: Authorized access only.
+      Unauthorized access is prohibited and will be prosecuted.
+      All activity is monitored and logged.
+
+- name: Configurar banner /etc/issue (BANN-7126 / CIS 1.7)
+  ansible.builtin.copy:
+    dest: /etc/issue
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      WARNING: Authorized access only.
+      Unauthorized access is prohibited and will be prosecuted.
+      All activity is monitored and logged.

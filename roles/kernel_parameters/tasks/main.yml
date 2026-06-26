@@ -1,0 +1,71 @@
+---
+# CIS 3.x — Parámetros sysctl (validados con Lynis — score 82)
+
+- name: Aplicar parámetros de kernel CIS
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    sysctl_file: /etc/sysctl.d/99-cis-hardening.conf
+    reload: true
+  loop:
+    # IP forwarding
+    - { key: "net.ipv4.ip_forward",                       value: "0" }
+    - { key: "net.ipv6.conf.all.forwarding",               value: "0" }
+
+    # Anti-spoofing
+    - { key: "net.ipv4.conf.all.rp_filter",                value: "1" }
+    - { key: "net.ipv4.conf.default.rp_filter",            value: "1" }
+
+    # Redirects ICMP
+    - { key: "net.ipv4.conf.all.accept_redirects",         value: "0" }
+    - { key: "net.ipv4.conf.default.accept_redirects",     value: "0" }
+    - { key: "net.ipv6.conf.all.accept_redirects",         value: "0" }
+    - { key: "net.ipv6.conf.default.accept_redirects",     value: "0" }
+    - { key: "net.ipv4.conf.all.send_redirects",           value: "0" }
+    - { key: "net.ipv4.conf.default.send_redirects",       value: "0" }
+
+    # Logging de martians
+    - { key: "net.ipv4.conf.all.log_martians",             value: "1" }
+    - { key: "net.ipv4.conf.default.log_martians",         value: "1" }
+
+    # ICMP y SYN flood
+    - { key: "net.ipv4.icmp_echo_ignore_broadcasts",       value: "1" }
+    - { key: "net.ipv4.icmp_ignore_bogus_error_responses", value: "1" }
+    - { key: "net.ipv4.tcp_syncookies",                    value: "1" }
+
+    # IPv6 deshabilitado
+    - { key: "net.ipv6.conf.all.disable_ipv6",             value: "1" }
+    - { key: "net.ipv6.conf.default.disable_ipv6",         value: "1" }
+
+    # Kernel — memoria y procesos
+    - { key: "kernel.randomize_va_space",                  value: "2" }
+    - { key: "kernel.dmesg_restrict",                      value: "1" }
+    - { key: "kernel.yama.ptrace_scope",                   value: "1" }
+    - { key: "kernel.kptr_restrict",                       value: "2" }
+    - { key: "kernel.sysrq",                               value: "0" }
+    - { key: "kernel.core_uses_pid",                       value: "1" }
+    - { key: "kernel.ctrl-alt-del",                        value: "0" }
+    - { key: "kernel.perf_event_paranoid",                 value: "3" }
+
+    # BPF
+    - { key: "kernel.unprivileged_bpf_disabled",           value: "1" }
+    - { key: "net.core.bpf_jit_harden",                    value: "2" }
+
+    # Filesystem — protección de archivos especiales
+    - { key: "fs.protected_fifos",                         value: "2" }
+    - { key: "fs.protected_hardlinks",                     value: "1" }
+    - { key: "fs.protected_regular",                       value: "2" }
+    - { key: "fs.protected_symlinks",                      value: "1" }
+    - { key: "fs.suid_dumpable",                           value: "0" }
+
+    # TTY
+    - { key: "dev.tty.ldisc_autoload",                     value: "0" }
+
+- name: Deshabilitar core dumps en limits.conf (CIS 1.5.1)
+  ansible.builtin.blockinfile:
+    path: /etc/security/limits.conf
+    marker: "# {mark} ANSIBLE MANAGED — core dumps"
+    block: |
+      * hard core 0
+      * soft core 0

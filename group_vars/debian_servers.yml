@@ -1,0 +1,8 @@
+---
+admin_user:       administrator
+admin_group:      sudo
+wazuh_manager_ip: "192.168.56.50"    # <-- Cambiar por la IP real de la OVA
+ssh_port:         2222
+ssh_allowed_users:
+  - "{{ admin_user }}"
+system_locale:    "en_US.UTF-8"

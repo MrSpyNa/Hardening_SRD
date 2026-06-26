@@ -1,0 +1,104 @@
+---
+# CIS 4.1 — Auditoría de eventos con auditd
+
+- name: Instalar auditd y plugins
+  ansible.builtin.apt:
+    name:
+      - auditd
+      - audispd-plugins
+    state: present
+
+- name: Recargar systemd daemon tras instalación
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Habilitar auditd via SysV (compatibilidad Debian)
+  ansible.builtin.command: systemctl enable auditd
+  changed_when: false
+  failed_when: false
+
+- name: Arrancar auditd
+  ansible.builtin.service:
+    name: auditd
+    state: started
+  failed_when: false
+
+- name: Desplegar reglas de auditoría CIS (CIS 4.1)
+  ansible.builtin.copy:
+    dest: /etc/audit/rules.d/cis.rules
+    owner: root
+    group: root
+    mode: '0640'
+    content: |
+      # Reglas CIS Level 1 — ese.uy
+      -D
+      -b 8192
+
+      # Identidad y autenticación
+      -w /etc/passwd -p wa -k identity
+      -w /etc/shadow -p wa -k identity
+      -w /etc/group -p wa -k identity
+      -w /etc/gshadow -p wa -k identity
+      -w /etc/sudoers -p wa -k sudoers
+      -w /etc/sudoers.d/ -p wa -k sudoers
+
+      # SSH
+      -w /etc/ssh/sshd_config -p wa -k sshd
+
+      # Comandos ejecutados como root
+      -a always,exit -F arch=b64 -S execve -F euid=0 -k root_commands
+      -a always,exit -F arch=b32 -S execve -F euid=0 -k root_commands
+
+      # Escalada de privilegios
+      -a always,exit -F arch=b64 -S setuid -k privilege_escalation
+      -a always,exit -F arch=b64 -S setgid -k privilege_escalation
+
+      # Modificación de tiempo
+      -a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time_change
+      -a always,exit -F arch=b32 -S adjtimex -S settimeofday -k time_change
+
+      # Módulos de kernel
+      -w /sbin/insmod -p x -k modules
+      -w /sbin/rmmod -p x -k modules
+      -w /sbin/modprobe -p x -k modules
+      -a always,exit -F arch=b64 -S init_module -S delete_module -k modules
+
+      # Login / Logout
+      -w /var/log/lastlog -p wa -k logins
+      -w /var/run/faillock/ -p wa -k logins
+
+      # Sudo
+      -w /var/log/sudo.log -p wa -k sudo_log
+
+      # Wazuh
+      -w /var/ossec/ -p wa -k wazuh
+
+      # Reglas inmutables
+      -e 2
+  notify: Reload auditd rules
+
+- name: Asegurar que /etc/audit existe
+  ansible.builtin.file:
+    path: /etc/audit
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+
+- name: Verificar si auditd.conf existe
+  ansible.builtin.stat:
+    path: /etc/audit/auditd.conf
+  register: auditd_conf
+
+- name: Configurar retención de logs en auditd.conf (CIS 4.1.1)
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  loop:
+    - { regexp: '^max_log_file ',       line: 'max_log_file = 50'           }
+    - { regexp: '^num_logs ',           line: 'num_logs = 10'                }
+    - { regexp: '^max_log_file_action', line: 'max_log_file_action = ROTATE' }
+  when: auditd_conf.stat.exists
+  notify: Restart auditd

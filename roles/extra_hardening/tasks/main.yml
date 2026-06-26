@@ -1,0 +1,97 @@
+---
+# Mejoras post-análisis Lynis (score 82 → 86+)
+# DEB-0280, DEB-0810, DEB-0831, DEB-0880, PKGS-7370, PKGS-7394, ACCT-9622, ACCT-9626
+
+- name: Instalar paquetes de seguridad recomendados por Lynis
+  ansible.builtin.apt:
+    name:
+      - libpam-tmpdir
+      - needrestart
+      - fail2ban
+      - apt-listbugs
+      - debsums
+      - apt-show-versions
+      - acct
+      - sysstat
+    state: present
+    update_cache: true
+
+- name: Configurar fail2ban para SSH (DEB-0880)
+  ansible.builtin.copy:
+    dest: /etc/fail2ban/jail.local
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      [DEFAULT]
+      bantime  = 3600
+      findtime = 600
+      maxretry = 3
+      backend  = systemd
+
+      [sshd]
+      enabled  = true
+      port     = ssh
+      logpath  = /var/log/auth.log
+      maxretry = 3
+      bantime  = 3600
+  notify: Restart fail2ban
+
+- name: Habilitar fail2ban
+  ansible.builtin.command: systemctl enable fail2ban
+  changed_when: false
+  failed_when: false
+
+- name: Arrancar fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    state: started
+  failed_when: false
+
+- name: Habilitar acct — accounting de procesos (ACCT-9622)
+  ansible.builtin.systemd:
+    name: acct
+    state: started
+    enabled: true
+  failed_when: false
+
+- name: Verificar si /etc/default/sysstat existe
+  ansible.builtin.stat:
+    path: /etc/default/sysstat
+  register: sysstat_conf
+
+- name: Habilitar sysstat (ACCT-9626)
+  ansible.builtin.lineinfile:
+    path: /etc/default/sysstat
+    regexp: '^ENABLED='
+    line: 'ENABLED="true"'
+    state: present
+  when: sysstat_conf.stat.exists
+  notify: Restart sysstat
+
+- name: Habilitar sysstat servicio
+  ansible.builtin.command: systemctl enable sysstat
+  changed_when: false
+  failed_when: false
+
+- name: Arrancar sysstat
+  ansible.builtin.service:
+    name: sysstat
+    state: started
+  failed_when: false
+
+- name: Verificar si resolved.conf existe
+  ansible.builtin.stat:
+    path: /etc/systemd/resolved.conf
+  register: resolved_conf
+
+- name: Configurar DNS secundario en systemd-resolved (NETW-2705)
+  ansible.builtin.blockinfile:
+    path: /etc/systemd/resolved.conf
+    marker: "# {mark} ANSIBLE MANAGED — DNS"
+    block: |
+      [Resolve]
+      DNS=10.0.2.3 8.8.8.8
+      FallbackDNS=1.1.1.1
+  when: resolved_conf.stat.exists
+  notify: Restart systemd-resolved

@@ -1,0 +1,16 @@
+---
+- name: Restart fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    state: restarted
+  failed_when: false
+
+- name: Restart sysstat
+  ansible.builtin.systemd:
+    name: sysstat
+    state: restarted
+
+- name: Restart systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    state: restarted

@@ -1,0 +1,64 @@
+<ossec_config>
+
+  <client>
+    <server>
+      <address>{{ wazuh_manager_ip }}</address>
+      <port>1514</port>
+      <protocol>tcp</protocol>
+    </server>
+    <config-profile>debian, debian13</config-profile>
+    <notify_time>10</notify_time>
+    <time-reconnect>60</time-reconnect>
+    <auto_restart>yes</auto_restart>
+    <crypto_method>aes</crypto_method>
+  </client>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/auth.log</location>
+  </localfile>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/syslog</location>
+  </localfile>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/kern.log</location>
+  </localfile>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/ufw.log</location>
+  </localfile>
+
+  <localfile>
+    <log_format>audit</log_format>
+    <location>/var/log/audit/audit.log</location>
+  </localfile>
+
+  <localfile>
+    <log_format>syslog</log_format>
+    <location>/var/log/sudo.log</location>
+  </localfile>
+
+  <syscheck>
+    <frequency>43200</frequency>
+    <scan_on_start>yes</scan_on_start>
+    <directories check_all="yes">/etc,/usr/bin,/usr/sbin</directories>
+    <directories check_all="yes">/bin,/sbin</directories>
+    <directories check_all="yes">/etc/ssh</directories>
+    <directories check_all="yes">/etc/sudoers.d</directories>
+    <ignore>/etc/mtab</ignore>
+    <ignore>/etc/resolv.conf</ignore>
+    <ignore>/etc/adjtime</ignore>
+  </syscheck>
+
+  <rootcheck>
+    <frequency>43200</frequency>
+    <rootkit_files>/var/ossec/etc/shared/rootkit_files.txt</rootkit_files>
+    <rootkit_trojans>/var/ossec/etc/shared/rootkit_trojans.txt</rootkit_trojans>
+  </rootcheck>
+
+</ossec_config>
