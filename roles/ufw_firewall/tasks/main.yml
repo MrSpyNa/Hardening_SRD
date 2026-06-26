@@ -25,12 +25,14 @@
     direction: routed
     policy: deny
 
-- name: Permitir SSH (acceso desde Windows/MobaXterm)
+- name: Permitir SSH (acceso desde maquinas administrativas)
   community.general.ufw:
     rule: allow
+    from_ip: "{{ item }}"
     port: "{{ ssh_port }}"
     proto: tcp
     comment: "SSH administracion"
+  loop: "{{ ssh_allowed_sources }}"
 
 - name: Permitir Wazuh — eventos
   community.general.ufw:

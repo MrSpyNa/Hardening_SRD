@@ -6,3 +6,7 @@ ssh_port:         2222
 ssh_allowed_users:
   - "{{ admin_user }}"
 system_locale:    "en_US.UTF-8"
+
+ssh_allowed_sources:
+  - "192.168.56.101" #Maquina desde la que se ejecuta Ansible
+  - "192.168.56.1" #Host / Windows
